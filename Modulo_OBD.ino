@@ -1,33 +1,32 @@
-#include <OBD2UART.h>
+#include <Wire.h>
+#include <OBD.h>
 
-COBD obd;
+COBD obd; /* for Model A (UART version) */
 
-void setup(){
-	Serial.begin(38400);
-	obd.begin();
-	while (!obd.init()){
-		Serial.println("INIT FAIL!");
-		Serial.println(obd.getState());
-	}
-	Serial.println(obd.getState());
-	obd.setProtocol(PROTO_KWP2000_FAST);
-	Serial.println(obd.getState());
+void setup()
+{
+  // we'll use the debug LED as output
+  Serial.begin(38400);
+  pinMode(13, OUTPUT);
+  // start communication with OBD-II adapter
+  obd.begin();
+  // initiate OBD-II connection until success
+  while (!obd.init());
 }
 
-void loop(){
-	int value ;
- /* while (!obd.init()){
-    Serial.println("INIT FAIL!");
-    Serial.println(obd.getState());
+void loop()
+{
+  Serial.println("loop");
+  int value;
+  // save engine RPM in variable 'value', return true on success
+  delay(100);
+  if (obd.readPID(PID_SPEED, value)) {
+    Serial.print("Speed = ");
+    Serial.println(value);
+  }
+  //delay(1000);
+ /* if (obd.readPID(PID_RPM, value)) {
+    Serial.print("RPM = ");
+    Serial.println(value);
   }*/
-	Serial.println(obd.getState());
-	obd.readPID(PID_RPM, value);
-	Serial.print("RPM: ");
-	Serial.println(value);
-  delay(1000);
-  obd.readPID(PID_SPEED, value);
-  Serial.print("Velocidade: ");
-  Serial.println(value);
-	Serial.println(obd.getState());
- //obd.end();
 }
