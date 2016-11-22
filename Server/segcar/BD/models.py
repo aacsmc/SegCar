@@ -1,0 +1,36 @@
+from django.db import models
+
+class Rua(models.Model):
+    nome = models.CharField(max_length=100)
+    dia = models.IntegerField(default=0)
+    hora = models.IntegerField(default=0)
+    risco = models.FloatField(default=1)
+    vel = models.IntegerField(default=40)
+    def __str__(self):
+        return self.nome + " = " + str(self.risco)
+
+class Carro(models.Model):
+    modelo = models.CharField(max_length=100)
+    proprietario = models.CharField(max_length=200)
+    id_disp = models.IntegerField(default = -1)
+    fabricacao = models.IntegerField(default = 0)
+    def __str__(self):
+        return self.modelo +"  "+self.proprietario
+
+class Ano(models.Model):
+    carro = models.ForeignKey(Carro, on_delete=models.CASCADE)
+    ano = models.IntegerField(default = 0)
+    def tarifa(self):
+        tarifa = 0
+        for mes in Mes.objects.filter(mes.ano.pk == self.pk):
+            tarifa = tarifa + mes.tarifa
+        return tarifa
+    def __str__(self):
+        return self.carro.proprietario + " " +str(self.ano)+" = "+str(tarifa())
+
+class Mes(models.Model):
+    ano = models.ForeignKey(Ano, on_delete=models.CASCADE)
+    tarifa = models.FloatField(default = 0)
+    mes = models.IntegerField(default = 0)
+    def __str__(self):
+        return str(self.mes) + " = " + str(self.tarifa)
