@@ -12,8 +12,9 @@ class Rua(models.Model):
 class Carro(models.Model):
     modelo = models.CharField(max_length=100)
     proprietario = models.CharField(max_length=200)
-    id_disp = models.IntegerField(default = -1)
     fabricacao = models.IntegerField(default = 0)
+    q_rua = models.IntegerField(default = 0)
+    v_rua = models.IntegerField(default = 0)
     def __str__(self):
         return self.modelo +"  "+self.proprietario
 
