@@ -8,10 +8,18 @@ from .serializers import CarroSerializer
 from rest_framework.response import Response
 from django.http import Http404
 
-class CondicaoCarro(APIView):
+class TodosCarros(APIView):
 
 	def get(self, request):
 		serializer = CarroSerializer(Carro.objects.all(), many = True)
+		return Response(serializer.data)
+	def	post(self):
+		pass
+
+class CondicaoCarro(APIView):
+
+	def get(self, request, carro_id):
+		serializer = CarroSerializer(Carro.objects.get(pk=carro_id), many = False)
 		return Response(serializer.data)
 	def	post(self):
 		pass
