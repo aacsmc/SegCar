@@ -8,6 +8,7 @@
 #include <OBD.h>
 
 #define TAM_ARRAY 10
+#define VEL_LIM 15 // Valor recebido do banco de dados
 
 COBD obd; /* for Model A (UART version) */
 
@@ -16,6 +17,9 @@ bool radioNumber = 1;
 //1 - Arduino;
 //0 - Galileo;
 RF24 radio(7,8);
+
+// Feedback
+const int buzzer = 9; //buzzer to arduino pin 9
 
 // Rede RF
 const uint64_t wAddress[] = {0x7878787878LL, 0xB3B4B5B6CDF1, 0xB3B4B5B6CDLL, 0xB3B4B5B6F1LL};
@@ -71,6 +75,8 @@ void setup()
   // initiate OBD-II connection until success
   while (!obd.init());
 
+  // Inicializa o pino buzzer
+  pinMode(buzzer, OUTPUT); // Set buzzer - pin 9 as an output
 
   //Inicializa o RF
   radio.begin();
@@ -94,6 +100,12 @@ void loop()
     if (obd.readPID(PID_SPEED, value)) {
       soma = soma + value;
     }
+    
+    if(value > VEL_LIM) {
+        tone(buzzer, 1000); // Send 1KHz sound signal...
+      } else {
+        noTone(buzzer);     // Stop sound...
+      }
   }
   velocidade = (int) soma/TAM_ARRAY;
 
