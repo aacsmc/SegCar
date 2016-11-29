@@ -6,9 +6,11 @@
 #include <string.h>
 #include <Wire.h>
 #include <OBD.h>
+#include "TinyGPS++.h"
+#include "SoftwareSerial.h"
 
 #define TAM_ARRAY 10
-#define VEL_LIM 15 // Valor recebido do banco de dados
+#define VEL_LIM 25 // Valor recebido do banco de dados
 
 COBD obd; /* for Model A (UART version) */
 
@@ -20,6 +22,10 @@ RF24 radio(7,8);
 
 // Feedback
 const int buzzer = 9; //buzzer to arduino pin 9
+
+// GPS
+TinyGPSPlus gps;
+SoftwareSerial gps_serial(10, 11); //RX=pin 10, TX= pin 11
 
 // Rede RF
 const uint64_t wAddress[] = {0x7878787878LL, 0xB3B4B5B6CDF1, 0xB3B4B5B6CDLL, 0xB3B4B5B6F1LL};
@@ -66,9 +72,8 @@ boolean receiveRF(){
 
 void setup()
 {
-  // we'll use the debug LED as output
   Serial.begin(38400);
-
+  gps_serial.begin(9600);
 
   // start communication with OBD-II adapter
   obd.begin();
@@ -99,8 +104,10 @@ void loop()
     // save SPEED in variable 'value', return true on success
     if (obd.readPID(PID_SPEED, value)) {
       soma = soma + value;
+                                                                                  Serial.print("Velocidade instantanea: ");
+                                                                                  Serial.println(value);
     }
-    
+
     if(value > VEL_LIM) {
         tone(buzzer, 1000); // Send 1KHz sound signal...
       } else {
@@ -110,20 +117,34 @@ void loop()
   velocidade = (int) soma/TAM_ARRAY;
 
   // MÓDULO GPS PEGA OS DADOS
+  do {
+    if (gps.encode(gps_serial.read())) {
+      Serial.println("Quantidade de Satelites:");
+      Serial.println(gps.satellites.value());
+      Serial.println("Latitude:");
+      Serial.println(gps.location.lat(), 6);
+      Serial.println("Longitude:");
+      Serial.println(gps.location.lng(), 6);
+      Serial.println();
+    }
+  } while(!gps_serial.available());
+
+                                                                                  Serial.print("Velocidade média: ");
+                                                                                  Serial.println(velocidade);
 
   // FORMAÇÃO DA STRING PARA ENVIAR PRA GALILEO
 
   // ENVIO PARA GALILEO
-  sprintf(data_send, "lat=%s&lon=%s&vel=%d", lat, lon, velocidade);
-  sendRF();
+  //sprintf(data_send, "&lat=%s&lon=%s&vel=%d", lat, lon, velocidade);
+  //sendRF();
  
   // Fica esperando mensagem da Galileo
-  boolean timeout;
-  timeout = receiveRF();
+ // boolean timeout;
+  //timeout = receiveRF();
   
-  if (!timeout){
+  /*if (!timeout){
       // Verifica a informação recebida
       sscanf(data_rcv, "%d %s", &velocidade_rcv, instruction); // Pega mensagem que chegou e separa no id e na instrução
-  }
+  }*/
 
 }
