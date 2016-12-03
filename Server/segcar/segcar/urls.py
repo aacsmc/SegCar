@@ -22,6 +22,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'Carro/$', views.TodosCarros.as_view()),
     url(r'^Carro/', include("BD.urls")),
+    url(r'^Message/', views.UpdateUser.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
