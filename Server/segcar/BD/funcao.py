@@ -1,15 +1,14 @@
 from geopy.geocoders import Nominatim
 import unicodedata
-geolocator = Nominatim()
-
 import time
 import datetime
-from .models import Carro, Rua, Ano, Mes, Dia
+from .models import Carro, Rua, Ano, Mes, Dia, Historico
+#import pytz
+
+geolocator = Nominatim()
 
 
 def get_nome(end):
-
-
     i = 0
     f = 0
     cont = 0
@@ -22,26 +21,25 @@ def get_nome(end):
             f += 1
     if ("AVENIDA" == end.upper()[0:7] or "RUA" == end.upper()[0:4]):
         return filter(end[0:i])
-    return filter(end[i+2:f].upper())
+    return filter(end[i + 2:f].upper())
 
 
 def filter(s):
     s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
-    s= str(s)[2:len(str(s))-1]
+    s = str(s)[2:len(str(s)) - 1]
     if ("AVENIDA" == s.upper()[0:7]):
         s = "AV" + s.upper()[7:]
     s = s.upper()
-    print(s)
+    #print(s)
     return s
 
 
 def calcula_ic(rua, vel):
-    conducao = (rua.risco + 1)*vel
-    print(rua.nome+" "+str(rua.risco))
+    conducao = (rua.risco + 1) * vel
+    #print(rua.nome + " " + str(rua.risco))
     if vel > rua.vel:
         conducao *= 2
     return conducao
-
 
 
 def get_rua(gps):
@@ -53,15 +51,18 @@ def get_rua(gps):
     try:
         rua = Rua.objects.get(hora=hora, dia=dia, nome=nome_rua)
     except Rua.DoesNotExist:
-        rua= Rua.objects.get(nome="NAO ENCONTRADO")
+        rua = Rua.objects.get(nome="NAO ENCONTRADO")
 
     return rua
 
 
-def updateCarro(msg):
+def update_carro(msg):
     now = datetime.datetime.now()
 
-    car = Carro.objects.get(pk=msg.id_carro)
+    try:
+        car = Carro.objects.get(pk=msg.id_carro)
+    except Carro.DoesNotExist:
+        return
     if not Ano.objects.filter(carro=car, ano=int(now.year)).exists():
         a = Ano(carro=car, ano=int(now.year))
         a.save()
@@ -71,7 +72,7 @@ def updateCarro(msg):
     if not Mes.objects.filter(ano=year, mes=int(now.month)).exists():
         a = Mes(ano=year, mes=int(now.month))
         a.save()
-    month=Mes.objects.get(ano=year, mes=int(now.month))
+    month = Mes.objects.get(ano=year, mes=int(now.month))
 
     if not Dia.objects.filter(mes=month, dia=int(now.day)).exists():
         a = Dia(mes=month, dia=int(now.day))
@@ -80,33 +81,43 @@ def updateCarro(msg):
 
     rua = get_rua(msg.gps)
 
-
     tar = day.tarifa + calcula_ic(rua, msg.vel)
-    day.tarifa=tar
+    day.tarifa = tar
     day.save()
-
+    update_hist(car, msg)
     update_feedback(car, rua, msg.vel, msg.pkt)
 
 
+def update_hist(car, msg):
+    try:
+        hist = Historico.objects.get(pkt=(msg.pkt % 720), carro=car)
+    except Historico.DoesNotExist:
+        hist = Historico(carro=car, pkt=msg.pkt)
+
+    hist.vel = msg.vel
+    hist.gps = msg.gps
+
+    if msg.pkt > car.pkt:
+        hist.timestamp = time.strftime("%c")
+    else:
+        hist.timestamp = "atraso"
+
+    hist.save()
+
 
 def update_feedback(car, rua, vel, pkt):
-    if (pkt < car.pkt) :
+    if (pkt < car.pkt):
         return
-    if (rua.risco < 1) :
+    if (rua.risco < 1):
         car.q_rua = 1
     elif (rua.risco < 5):
         car.q_rua = 2
     else:
         car.q_rua = 3
 
-    if(rua.vel<vel):
+    if (rua.vel < vel):
         car.v_rua = 1
     else:
         car.v_rua = 0
 
     car.save()
-
-
-
-
-

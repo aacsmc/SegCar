@@ -1,0 +1,11 @@
+from BD.models import Carro, Rua, Mes,Dia, Ano,Msg
+from BD.funcao import get_nome,get_rua,filter,calcula_ic,update_carro,update_feedback,update_hist
+from geopy.geocoders import Nominatim
+geolocator = Nominatim()
+import time
+import datetime
+
+
+
+msg=Msg(pkt=4,id_carro=1,vel=30,gps="-8.0519549,-34.9530203")
+update_carro(msg)

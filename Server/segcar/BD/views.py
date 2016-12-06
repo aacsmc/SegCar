@@ -3,14 +3,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from .models import Carro
+from .models import Carro, Msg
 from .serializers import CarroSerializer, MessageSerializer
 from rest_framework.response import Response
 from django.http import Http404, HttpResponse, JsonResponse
 from django.utils.six import BytesIO
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-
+from BD.funcao import update_carro
 
 class TodosCarros(APIView):
     def get(self, request: object) -> object:
@@ -38,9 +38,22 @@ class UpdateUser(APIView):
     def post(self, request):
         if request.method == 'POST':
             data = JSONParser().parse(request)
-            serializer = MessageSerializer(data=data)
+            serializer = MessageSerializer(data=data,many=True)
             if serializer.is_valid(raise_exception=True):
-                msegres = serializer.save()
-                msegres.insert()
-                return JsonResponse(serializer.data, status=201)
+                msg = serializer.save()
+                x=msg[0]
+                for i in msg:
+                    update_carro(i)
+                pk = msg[0].id_carro
+
+                Msg.objects.all().delete()
+
+                #msegres.insert()
+                try:
+                    carro = Carro.objects.get(pk=pk)
+                    ret = CarroSerializer(carro, many=False)
+                    if serializer.is_valid(raise_exception=True):
+                        return JsonResponse(ret.data, status=201)
+                except Carro.DoesNotExist:
+                    pass
             return JsonResponse(serializer.errors, status=400)

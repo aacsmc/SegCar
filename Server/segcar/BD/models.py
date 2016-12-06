@@ -59,3 +59,10 @@ class Msg(models.Model):
 
     def __str__(self):
         return str(self.id_carro) + ": Estou aqui :D"
+
+class Historico(models.Model):
+    carro = models.ForeignKey(Carro, on_delete=models.CASCADE);
+    timestamp =models.CharField(max_length=20)
+    pkt = models.IntegerField(default=0)
+    gps = models.CharField(max_length=40)
+    vel = models.IntegerField(default=0)
