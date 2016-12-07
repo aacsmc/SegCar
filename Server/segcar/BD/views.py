@@ -12,6 +12,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 from BD.funcao import update_carro
 
+
 class TodosCarros(APIView):
     def get(self, request: object) -> object:
         serializer = CarroSerializer(Carro.objects.all(), many=True)
@@ -38,15 +39,17 @@ class UpdateUser(APIView):
     def post(self, request):
         if request.method == 'POST':
             data = JSONParser().parse(request)
-            serializer = MessageSerializer(data=data,many=True)
+            serializer = MessageSerializer(data=data, many=False)
             if serializer.is_valid(raise_exception=True):
                 msg = serializer.save()
-                x=msg[0]
-                for i in msg:
+
+                pk = msg.id_carro
+                '''for i in msg:
                     update_carro(i)
-                pk = msg[0].id_carro
 
                 Msg.objects.all().delete()
+                '''
+                update_carro(msg)
 
                 #msegres.insert()
                 try:
@@ -54,6 +57,8 @@ class UpdateUser(APIView):
                     ret = CarroSerializer(carro, many=False)
                     if serializer.is_valid(raise_exception=True):
                         return JsonResponse(ret.data, status=201)
+                    else:
+                        return HttpResponse("erro do bd\n")
                 except Carro.DoesNotExist:
-                    pass
+                    return HttpResponse("CARRO NAO EXISTE\n")
             return JsonResponse(serializer.errors, status=400)

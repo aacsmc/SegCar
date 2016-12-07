@@ -7,7 +7,7 @@ class Rua(models.Model):
     risco = models.FloatField(default=1)
     vel = models.IntegerField(default=40)
     def __str__(self):
-        return self.nome + " = " + str(self.risco)
+        return self.nome + self.dia+"\\"+ " = " + str(self.risco)
 
 class Carro(models.Model):
     modelo = models.CharField(max_length=100)
@@ -66,3 +66,5 @@ class Historico(models.Model):
     pkt = models.IntegerField(default=0)
     gps = models.CharField(max_length=40)
     vel = models.IntegerField(default=0)
+    def __str__(self):
+        return str(self.carro.modelo)+ "\t\tpacote=" + str(self.pkt) + "\t" + "hora = "+ str(self.timestamp)

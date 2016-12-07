@@ -1,16 +1,17 @@
 from geopy.geocoders import Nominatim
 import unicodedata
-import time
 import datetime
+from django.utils import timezone
 from .models import Carro, Rua, Ano, Mes, Dia, Historico
 #import pytz
 
 geolocator = Nominatim()
-
-
+#time.activate("Etc/GMT-3")
+#tz = datetime.timezone('Etc/GMT-3')
 def get_nome(end):
     i = 0
     f = 0
+    f2 = 0
     cont = 0
     for c in end:
         if c == ',':
@@ -19,10 +20,14 @@ def get_nome(end):
             i += 1
         if cont <= 1:
             f += 1
+        if cont<=2:
+            f2+=1
+
     if ("AVENIDA" == end.upper()[0:7] or "RUA" == end.upper()[0:4]):
         return filter(end[0:i])
-    return filter(end[i + 2:f].upper())
-
+    if  ("AVENIDA" == end.upper()[i+2:i+9] or "RUA" == end.upper()[i+2:i+6]):
+        return filter(end[i + 2:f].upper())
+    return filter(end[f+2:f2]).upper()
 
 def filter(s):
     s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
@@ -30,7 +35,7 @@ def filter(s):
     if ("AVENIDA" == s.upper()[0:7]):
         s = "AV" + s.upper()[7:]
     s = s.upper()
-    #print(s)
+    print(s)
     return s
 
 
@@ -43,8 +48,9 @@ def calcula_ic(rua, vel):
 
 
 def get_rua(gps):
-    dia = int(time.strftime("%w"))
-    hora = int(time.strftime("%H")) / 3
+    now = timezone.localtime(timezone.now())
+    dia = now.weekday()
+    hora = int(now.hour) / 3
     location = geolocator.reverse(gps)
     nome_rua = get_nome(location.address)
 
@@ -57,7 +63,7 @@ def get_rua(gps):
 
 
 def update_carro(msg):
-    now = datetime.datetime.now()
+    now = timezone.localtime(timezone.now())
 
     try:
         car = Carro.objects.get(pk=msg.id_carro)
@@ -98,10 +104,11 @@ def update_hist(car, msg):
     hist.gps = msg.gps
 
     if msg.pkt > car.pkt:
-        hist.timestamp = time.strftime("%c")
+        hist.timestamp = timezone.localtime(timezone.now()).strftime("%c")
     else:
-        hist.timestamp = "atraso"
-
+        hist.timestamp = "atrasado"
+    car.pkt=max(car.pkt,msg.pkt)
+    car.save()
     hist.save()
 
 
